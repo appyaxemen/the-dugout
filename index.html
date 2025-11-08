@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Team Dugout — Travel Baseball</title>
+  <meta name="theme-color" content="#0b1a3a" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    // Simple dark-mode based on system preference; user can toggle in Settings
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      document.documentElement.dataset.theme = savedTheme;
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.dataset.theme = 'dark';
+    }
+  </script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-title">Team Dugout</span>
+      <span class="brand-sub">Travel Baseball Manager</span>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-tab="lineup" class="active">Lineup</button>
+      <button data-tab="roster">Roster</button>
+      <button data-tab="schedule">Schedule</button>
+      <button data-tab="stats">Stats</button>
+      <button data-tab="settings" aria-label="Settings">⚙</button>
+    </nav>
+  </header>
+
+  <main id="views">
+    <!-- LINEUP -->
+    <section id="view-lineup" class="view active">
+      <div class="toolbar">
+        <div class="row">
+          <label>Date <input type="date" id="lineup-date"></label>
+          <label>Opponent <input type="text" id="lineup-opponent" placeholder="Opponent"></label>
+          <button id="save-lineup" class="primary">Save Lineup</button>
+        </div>
+        <div class="row">
+          <button id="new-lineup">New</button>
+          <select id="saved-lineups"></select>
+          <button id="load-lineup">Load</button>
+          <button id="delete-lineup" class="danger">Delete</button>
+        </div>
+      </div>
+
+      <div class="columns">
+        <div class="col">
+          <h3>Batting Order</h3>
+          <ol id="batting-order" class="list droppable" aria-live="polite"></ol>
+          <div class="hint">Drag players from roster, or tap ➕ to insert.</div>
+          <div class="order-actions">
+            <button id="clear-order" class="danger subtle">Clear Order</button>
+            <button id="auto-order" class="subtle">Auto-Fill</button>
+          </div>
+        </div>
+        <div class="col">
+          <h3>Available Players</h3>
+          <ul id="available-players" class="list droppable"></ul>
+          <div class="hint">Filter: <input type="text" id="roster-filter" placeholder="Search roster..."></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROSTER -->
+    <section id="view-roster" class="view">
+      <div class="toolbar">
+        <form id="roster-form" class="row">
+          <input type="text" id="player-name" placeholder="Player Name" required>
+          <input type="number" id="player-number" placeholder="#" min="0" max="99" required>
+          <input type="text" id="player-positions" placeholder="Positions (e.g., P, C, 1B)">
+          <button class="primary" type="submit">Add Player</button>
+        </form>
+      </div>
+      <ul id="roster-list" class="cards"></ul>
+    </section>
+
+    <!-- SCHEDULE -->
+    <section id="view-schedule" class="view">
+      <div class="toolbar">
+        <form id="game-form" class="row">
+          <input type="date" id="game-date" required>
+          <input type="time" id="game-time">
+          <input type="text" id="game-opponent" placeholder="Opponent" required>
+          <input type="text" id="game-location" placeholder="Location">
+          <button class="primary" type="submit">Add Game</button>
+        </form>
+      </div>
+      <div class="schedule-lists">
+        <h3>Upcoming</h3>
+        <ul id="schedule-upcoming" class="cards"></ul>
+        <h3>Completed</h3>
+        <ul id="schedule-completed" class="cards"></ul>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section id="view-stats" class="view">
+      <div class="toolbar">
+        <div class="row">
+          <select id="stats-player"></select>
+          <button id="reset-player-stats" class="danger">Reset Player</button>
+        </div>
+        <div class="row">
+          <button id="export-stats">Export CSV</button>
+          <button id="clear-all-stats" class="danger subtle">Clear All</button>
+        </div>
+      </div>
+      <div id="stats-grid" class="stats-grid">
+        <!-- dynamically generated stat inputs -->
+      </div>
+      <div id="stats-summary" class="stats-summary"></div>
+      <div class="hint">Tip: Use the Schedule to jump into a game's lineup, then record stats here.</div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="view-settings" class="view">
+      <h3>Team Settings</h3>
+      <div class="row">
+        <label>Team Name <input type="text" id="team-name" placeholder="e.g., Appalachian Axemen"></label>
+        <button id="save-team-name">Save</button>
+      </div>
+      <div class="row">
+        <button id="export-data">Export Backup</button>
+        <input type="file" id="import-data" accept="application/json">
+      </div>
+      <div class="row">
+        <button id="install-btn" class="primary">Install App</button>
+        <button id="theme-toggle">Toggle Theme</button>
+        <button id="reset-app" class="danger">Factory Reset</button>
+      </div>
+      <p class="small">All data is stored locally on your device (via LocalStorage). You can export/import at any time.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>⚾ Team Dugout</span>
+    <span id="version">v1.0</span>
+  </footer>
+
+  <template id="player-card-tpl">
+    <li class="card">
+      <div class="card-main">
+        <strong class="player-name"></strong>
+        <span class="muted">#<span class="player-number"></span> • <span class="player-positions"></span></span>
+      </div>
+      <div class="card-actions">
+        <button class="add-to-lineup" title="Add to lineup">➕</button>
+        <button class="edit-player" title="Edit">✎</button>
+        <button class="delete-player danger" title="Delete">🗑</button>
+      </div>
+    </li>
+  </template>
+
+  <template id="lineup-item-tpl">
+    <li class="lineup-item draggable" draggable="true">
+      <span class="handle">⠿</span>
+      <span class="order-num"></span>
+      <span class="lineup-name"></span>
+      <span class="muted">#<span class="lineup-number"></span></span>
+      <input class="pos" placeholder="Pos">
+      <button class="remove danger" title="Remove">✖</button>
+    </li>
+  </template>
+
+  <template id="game-card-tpl">
+    <li class="card">
+      <div class="card-main">
+        <strong class="game-title"></strong>
+        <span class="muted game-sub"></span>
+      </div>
+      <div class="card-actions">
+        <button class="open-lineup">Lineup</button>
+        <button class="mark-done">Done</button>
+        <button class="delete-game danger">🗑</button>
+      </div>
+    </li>
+  </template>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js');
+      });
+    }
+  </script>
+</body>
+</html>
