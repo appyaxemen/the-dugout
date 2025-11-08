@@ -1,4 +1,4 @@
-// Team Dugout — Travel Baseball Manager
+// Appalachian Axemen — 10U
 // Data Model
 const DB_KEY = 'teamdugout:v1';
 const DEFAULT_STATE = {
